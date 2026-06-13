@@ -8,6 +8,7 @@ class AuthProvider extends ChangeNotifier {
   String _name = "";
   String _phone = "";
   String _token = "";
+  String _avatar = "";
   bool _isLoggedIn = false;
   bool _isLoading = true;
 
@@ -15,6 +16,7 @@ class AuthProvider extends ChangeNotifier {
   String get email => _phone;
   String get phone => _phone;
   String get token => _token;
+  String get avatar => _avatar;
   bool get isLoggedIn => _isLoggedIn;
   bool get isRegistered => _isLoggedIn;
   bool get isLoading => _isLoading;
@@ -27,6 +29,7 @@ class AuthProvider extends ChangeNotifier {
     _name = prefs.getString("userName") ?? "";
     _phone = prefs.getString("userPhone") ?? "";
     _token = prefs.getString("token") ?? "";
+    _avatar = prefs.getString("avatar") ?? "";
     _isLoading = false;
     notifyListeners();
   }
@@ -89,10 +92,12 @@ class AuthProvider extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool("isLoggedIn", false);
     await prefs.remove("token");
+    await prefs.remove("avatar");
     _isLoggedIn = false;
     _name = "";
     _phone = "";
     _token = "";
+    _avatar = "";
     notifyListeners();
   }
 
@@ -100,6 +105,13 @@ class AuthProvider extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString("userName", name);
     _name = name;
+    notifyListeners();
+  }
+
+  Future<void> setAvatar(String emoji) async {
+    final prefs = await SharedPreferences.getInstance();
+    _avatar = emoji;
+    await prefs.setString("avatar", emoji);
     notifyListeners();
   }
 }
@@ -222,10 +234,8 @@ class LanguageProvider extends ChangeNotifier {
   void setEnglish() { _isHindi = false; notifyListeners(); }
 }
 
-// ✅ NEW: ThemeProvider — Dark/Light mode ke liye
 class ThemeProvider extends ChangeNotifier {
   bool _isDark = false;
-
   bool get isDark => _isDark;
   ThemeMode get themeMode => _isDark ? ThemeMode.dark : ThemeMode.light;
 
@@ -273,22 +283,40 @@ class AddressProvider extends ChangeNotifier {
   String get phone => _phone;
 
   String get deliveryText =>
-      _city.isNotEmpty && _pincode.isNotEmpty
+      _fullAddress.isNotEmpty
           ? "Delivering to $_city - $_pincode"
           : "Delivering to Mumbai - 400042";
 
-  void updateAddress({
+  AddressProvider() { _loadFromPrefs(); }
+
+  Future<void> _loadFromPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    _name = prefs.getString("addr_name") ?? "";
+    _phone = prefs.getString("addr_phone") ?? "";
+    _fullAddress = prefs.getString("addr_address") ?? "";
+    _city = prefs.getString("addr_city") ?? "Mumbai";
+    _pincode = prefs.getString("addr_pincode") ?? "400042";
+    notifyListeners();
+  }
+
+  Future<void> updateAddress({
     required String name,
     required String phone,
     required String address,
     required String city,
     required String pincode,
-  }) {
+  }) async {
     _name = name;
     _phone = phone;
     _fullAddress = address;
     _city = city;
     _pincode = pincode;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString("addr_name", name);
+    await prefs.setString("addr_phone", phone);
+    await prefs.setString("addr_address", address);
+    await prefs.setString("addr_city", city);
+    await prefs.setString("addr_pincode", pincode);
     notifyListeners();
   }
 }

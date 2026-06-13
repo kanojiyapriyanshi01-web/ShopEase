@@ -1,4 +1,5 @@
 // lib/main.dart
+import 'screens/home/profile_screen.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -58,6 +59,7 @@ class ShopEaseApp extends StatelessWidget {
             AppRoutes.orders: (_) => const OrdersScreen(),
             AppRoutes.cart: (_) => const CartScreen(),
             AppRoutes.wishlist: (_) => const WishlistScreen(),
+            AppRoutes.profile: (_) => const ProfileScreen(),
           },
         ),
       ),
