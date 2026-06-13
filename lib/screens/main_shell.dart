@@ -4,7 +4,6 @@ import '../providers/app_providers.dart';
 import '../theme/app_theme.dart';
 import 'home/home_screen.dart';
 import 'categories/categories_screen.dart';
-import 'home/search_screen.dart';
 import 'home/cart_screen.dart';
 import 'home/profile_screen.dart';
 
@@ -19,7 +18,6 @@ class MainShell extends StatelessWidget {
     final screens = [
       const HomeScreen(),
       CategoriesScreen(),
-      const SearchScreen(),
       const CartScreen(),
       const ProfileScreen(),
     ];
@@ -45,11 +43,6 @@ class MainShell extends StatelessWidget {
             icon: Icon(Icons.category_outlined),
             selectedIcon: Icon(Icons.category_rounded, color: AppTheme.primary),
             label: 'Categories',
-          ),
-          const NavigationDestination(
-            icon: Icon(Icons.search_outlined),
-            selectedIcon: Icon(Icons.search_rounded, color: AppTheme.primary),
-            label: 'Search',
           ),
           NavigationDestination(
             icon: Badge(
