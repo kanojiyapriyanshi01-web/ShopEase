@@ -1,4 +1,4 @@
-﻿import '../../widgets/product_image.dart';
+import '../../widgets/product_image.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
@@ -59,11 +59,11 @@ class CartScreen extends StatelessWidget {
                                 color: theme.textTheme.bodyMedium?.color)),
                         const SizedBox(height: 4),
                         Row(children: [
-                          Text('₹${item.product.price.toInt()}',
+                          Text('?${item.product.price.toInt()}',
                               style: const TextStyle(fontWeight: FontWeight.w700,
                                   fontSize: 15, color: AppTheme.primary)),
                           const SizedBox(width: 6),
-                          Text('₹${item.product.originalPrice.toInt()}',
+                          Text('?${item.product.originalPrice.toInt()}',
                               style: TextStyle(fontSize: 11,
                                   color: isDark ? AppTheme.darkTextSecondary : AppTheme.textGrey,
                                   decoration: TextDecoration.lineThrough)),
@@ -117,11 +117,11 @@ class CartScreen extends StatelessWidget {
                   padding: const EdgeInsets.all(16),
                   child: Column(children: [
                     _priceRow('Total MRP',
-                        '₹${cart.items.fold(0, (s, i) => s + (i.product.originalPrice * i.quantity).toInt())}',
+                        '?${cart.items.fold(0, (s, i) => s + (i.product.originalPrice * i.quantity).toInt())}',
                         theme.textTheme.bodyMedium?.color ?? Colors.black, theme),
                     const SizedBox(height: 4),
                     _priceRow('Discount',
-                        '-₹${cart.items.fold(0, (s, i) => s + ((i.product.originalPrice - i.product.price) * i.quantity).toInt())}',
+                        '-?${cart.items.fold(0, (s, i) => s + ((i.product.originalPrice - i.product.price) * i.quantity).toInt())}',
                         Colors.green, theme),
                     const SizedBox(height: 4),
                     _priceRow('Delivery', 'FREE', Colors.green, theme),
@@ -130,7 +130,7 @@ class CartScreen extends StatelessWidget {
                       Text('Total Amount',
                           style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15,
                               color: theme.textTheme.bodyMedium?.color)),
-                      Text('₹${cart.total.toInt()}',
+                      Text('?${cart.total.toInt()}',
                           style: const TextStyle(fontWeight: FontWeight.w800,
                               fontSize: 18, color: AppTheme.primary)),
                     ]),
@@ -451,9 +451,9 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
             Text(item.product.name, maxLines: 2, overflow: TextOverflow.ellipsis,
                 style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12,
                     color: theme.textTheme.bodyMedium?.color)),
-            Text('₹${item.product.price.toInt()}',
+            Text('?${item.product.price.toInt()}',
                 style: const TextStyle(color: AppTheme.primary, fontWeight: FontWeight.w700)),
-            Text('Qty: ${item.quantity} | Subtotal: ₹${(item.product.price * item.quantity).toInt()}',
+            Text('Qty: ${item.quantity} | Subtotal: ?${(item.product.price * item.quantity).toInt()}',
                 style: TextStyle(fontSize: 11,
                     color: isDark ? AppTheme.darkTextSecondary : AppTheme.textGrey)),
           ])),
@@ -464,15 +464,15 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
               color: isDark ? AppTheme.darkCard : const Color(0xFFF5F5F5),
               borderRadius: BorderRadius.circular(10)),
           child: Column(children: [
-            _summaryRow('Total MRP', '₹${cart.items.fold(0, (s, i) => s + (i.product.originalPrice * i.quantity).toInt())}',
+            _summaryRow('Total MRP', '?${cart.items.fold(0, (s, i) => s + (i.product.originalPrice * i.quantity).toInt())}',
                 theme.textTheme.bodyMedium?.color ?? Colors.black, theme),
-            _summaryRow('Discount', '-₹${savings.toInt()}', Colors.green, theme),
+            _summaryRow('Discount', '-?${savings.toInt()}', Colors.green, theme),
             _summaryRow('Delivery', 'FREE', Colors.green, theme),
             Divider(height: 16, color: isDark ? AppTheme.darkDivider : null),
             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
               Text('Total Payable', style: TextStyle(fontWeight: FontWeight.w800,
                   fontSize: 15, color: theme.textTheme.bodyMedium?.color)),
-              Text('₹${cart.total.toInt()}', style: const TextStyle(
+              Text('?${cart.total.toInt()}', style: const TextStyle(
                   fontWeight: FontWeight.w800, fontSize: 18, color: AppTheme.primary)),
             ]),
           ])),
