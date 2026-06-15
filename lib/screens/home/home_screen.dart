@@ -11,6 +11,7 @@ import '../../providers/app_providers.dart';
 import '../../routes/app_routes.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/product_card.dart';
+import 'search_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -220,7 +221,11 @@ class _HomeScreenState extends State<HomeScreen> {
           if (mounted) setState(() => _isListening = false);
           if (mounted && Navigator.canPop(context)) Navigator.pop(context);
           Future.delayed(const Duration(milliseconds: 300), () {
-            if (mounted) Navigator.pushNamed(context, AppRoutes.search, arguments: query);
+            if (mounted) {
+              Navigator.push(context, MaterialPageRoute(
+                builder: (_) => SearchScreen(initialQuery: query),
+              ));
+            }
           });
         }
       },
