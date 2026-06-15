@@ -27,6 +27,23 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isListening = false;
   bool _dialogOpen = false;
 
+  final List<List<Color>> _categoryRingGradients = const [
+    [Color(0xFFE91E8C), Color(0xFFFF6B6B), Color(0xFFFFB347)],
+    [Color(0xFFE91E8C), Color(0xFFFF80AB)],
+    [Color(0xFF6A1B9A), Color(0xFFCE93D8)],
+    [Color(0xFF1565C0), Color(0xFF42A5F5)],
+    [Color(0xFFE65100), Color(0xFFFF8A65)],
+    [Color(0xFFAD1457), Color(0xFFF06292)],
+    [Color(0xFF4527A0), Color(0xFF9575CD)],
+    [Color(0xFF00838F), Color(0xFF4DD0E1)],
+    [Color(0xFF2E7D32), Color(0xFF81C784)],
+    [Color(0xFFC62828), Color(0xFFEF5350)],
+    [Color(0xFF37474F), Color(0xFF90A4AE)],
+    [Color(0xFF558B2F), Color(0xFFAED581)],
+    [Color(0xFF6D4C41), Color(0xFFBCAAA4)],
+    [Color(0xFF0277BD), Color(0xFF4FC3F7)],
+  ];
+
   final List<_BannerData> _banners = [
     _BannerData(title: 'Fashion Sale', subtitle: 'Upto 70% Off on Sarees & Kurtis',
         color1: const Color(0xFFE91E8C), color2: const Color(0xFFFF6B6B),
@@ -114,16 +131,13 @@ class _HomeScreenState extends State<HomeScreen> {
       }
       if (permission == LocationPermission.deniedForever) return;
       if (!mounted) return;
-
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('Fetching your location...'),
           backgroundColor: AppTheme.primary, duration: Duration(seconds: 2)));
-
       Position position = await Geolocator.getCurrentPosition(
           desiredAccuracy: LocationAccuracy.high);
       List<Placemark> placemarks =
           await placemarkFromCoordinates(position.latitude, position.longitude);
-
       if (placemarks.isNotEmpty && mounted) {
         Placemark place = placemarks.first;
         final city = place.locality ?? place.administrativeArea ?? 'Unknown';
@@ -140,10 +154,8 @@ class _HomeScreenState extends State<HomeScreen> {
             backgroundColor: Colors.green, duration: const Duration(seconds: 3)));
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('Could not get location'), backgroundColor: Colors.red));
-      }
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Could not get location'), backgroundColor: Colors.red));
     }
   }
 
@@ -164,16 +176,13 @@ class _HomeScreenState extends State<HomeScreen> {
         }
       },
     );
-
     if (!available) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('Microphone not available'), backgroundColor: Colors.red));
       return;
     }
-
     setState(() => _isListening = true);
     _dialogOpen = true;
-
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -202,7 +211,6 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
     );
-
     await _speech.listen(
       onResult: (result) {
         if (result.finalResult && result.recognizedWords.isNotEmpty) {
@@ -229,22 +237,106 @@ class _HomeScreenState extends State<HomeScreen> {
           content: Row(children: [
             SizedBox(width: 20, height: 20,
                 child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)),
-            SizedBox(width: 12),
-            Text('Searching similar products...'),
+            SizedBox(width: 12), Text('Analyzing image...'),
           ]),
           backgroundColor: AppTheme.primary, duration: Duration(seconds: 2)));
         await Future.delayed(const Duration(seconds: 2));
-        if (mounted) {
-          Navigator.pushNamed(context, AppRoutes.categoryProducts, arguments: {
-            'category': 'Image Search Results',
-            'products': SampleData.products,
-          });
-        }
+        if (mounted) _showImageCategoryPicker();
       }
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
     }
+  }
+
+  void _showImageCategoryPicker() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final categories = [
+      {'label': 'Sarees', 'icon': '👘', 'category': 'Sarees'},
+      {'label': 'Women\nFashion', 'icon': '👗', 'category': 'Women Fashion'},
+      {'label': 'Men\nFashion', 'icon': '👔', 'category': 'Men Fashion'},
+      {'label': 'Kids', 'icon': '🧒', 'category': 'Kids'},
+      {'label': 'Footwear', 'icon': '👟', 'category': 'Footwear'},
+      {'label': 'Jewellery', 'icon': '💍', 'category': 'Jewellery'},
+      {'label': 'Beauty', 'icon': '💄', 'category': 'Beauty'},
+      {'label': 'Electronics', 'icon': '📱', 'category': 'Electronics'},
+      {'label': 'Bags', 'icon': '👜', 'category': 'Bags'},
+      {'label': 'Accessories', 'icon': '⌚', 'category': 'Accessories'},
+      {'label': 'Home &\nKitchen', 'icon': '🏠', 'category': 'Home & Kitchen'},
+      {'label': 'Skincare', 'icon': '🧴', 'category': 'Skincare'},
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        decoration: BoxDecoration(
+          color: isDark ? AppTheme.darkSurface : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Container(width: 40, height: 4,
+              decoration: BoxDecoration(
+                  color: isDark ? AppTheme.darkDivider : Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2))),
+          const SizedBox(height: 16),
+          Row(children: [
+            Container(width: 40, height: 40,
+                decoration: BoxDecoration(
+                    color: AppTheme.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8)),
+                child: const Icon(Icons.image_search_rounded, color: AppTheme.primary, size: 22)),
+            const SizedBox(width: 12),
+            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('What did you capture?',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700,
+                      color: isDark ? AppTheme.darkTextPrimary : AppTheme.textDark)),
+              Text('Select category to find similar products',
+                  style: TextStyle(fontSize: 12,
+                      color: isDark ? AppTheme.darkTextSecondary : Colors.grey)),
+            ]),
+          ]),
+          const SizedBox(height: 16),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 4, crossAxisSpacing: 8,
+                mainAxisSpacing: 8, childAspectRatio: 0.85),
+            itemCount: categories.length,
+            itemBuilder: (ctx, i) {
+              final cat = categories[i];
+              return GestureDetector(
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushNamed(context, AppRoutes.categoryProducts,
+                      arguments: {
+                        'category': cat['category'],
+                        'products': SampleData.getByCategory(cat['category']!),
+                      });
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                      color: AppTheme.primary.withOpacity(0.06),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppTheme.primary.withOpacity(0.2))),
+                  child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                    Text(cat['icon']!, style: const TextStyle(fontSize: 26)),
+                    const SizedBox(height: 4),
+                    Text(cat['label']!, textAlign: TextAlign.center,
+                        maxLines: 2, overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600,
+                            color: isDark ? AppTheme.darkTextPrimary : AppTheme.textDark)),
+                  ]),
+                ),
+              );
+            },
+          ),
+        ]),
+      ),
+    );
   }
 
   void _showImageSearchDialog() {
@@ -291,6 +383,150 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // ── Promotional Banner Widget ─────────────────────────────
+  Widget _promoBanner({
+    required String title,
+    required String subtitle,
+    required String tag,
+    required Color bgColor,
+    required Color textColor,
+    required Color tagColor,
+    required String imageUrl,
+    required String category,
+  }) {
+    return GestureDetector(
+      onTap: () => Navigator.pushNamed(context, AppRoutes.categoryProducts, arguments: {
+        'category': category,
+        'products': SampleData.getByCategory(category),
+      }),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        height: 120,
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(14),
+          child: Stack(fit: StackFit.expand, children: [
+            Image.network(imageUrl, fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                  colors: [bgColor.withOpacity(0.95), bgColor.withOpacity(0.3)],
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: tagColor,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(tag,
+                        style: const TextStyle(color: Colors.white,
+                            fontSize: 9, fontWeight: FontWeight.w800)),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(title, maxLines: 1, overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: textColor,
+                          fontSize: 18, fontWeight: FontWeight.w900)),
+                  const SizedBox(height: 2),
+                  Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: textColor.withOpacity(0.8), fontSize: 11)),
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: tagColor,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Text('SHOP NOW',
+                        style: TextStyle(color: Colors.white,
+                            fontSize: 9, fontWeight: FontWeight.w700)),
+                  ),
+                ],
+              ),
+            ),
+          ]),
+        ),
+      ),
+    );
+  }
+
+  // ── Category Strip Banner ─────────────────────────────────
+  Widget _categoryStripBanner({
+    required String title,
+    required String subtitle,
+    required List<_StripItem> items,
+    required Color bgColor,
+  }) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      color: bgColor,
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(title, style: const TextStyle(fontSize: 18,
+                fontWeight: FontWeight.w900, color: Colors.black87)),
+            Text(subtitle, style: const TextStyle(fontSize: 12, color: Colors.black54)),
+          ]),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 110,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            itemCount: items.length,
+            itemBuilder: (ctx, i) => GestureDetector(
+              onTap: () => Navigator.pushNamed(context, AppRoutes.categoryProducts,
+                  arguments: {'category': items[i].category,
+                      'products': SampleData.getByCategory(items[i].category)}),
+              child: Container(
+                margin: const EdgeInsets.only(right: 10),
+                width: 90,
+                child: Column(children: [
+                  Container(
+                    width: 75, height: 75,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(10),
+                      color: Colors.white,
+                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08),
+                          blurRadius: 4)],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: Image.network(items[i].imageUrl, fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) =>
+                              Icon(items[i].icon, size: 32, color: Colors.grey)),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(items[i].label, textAlign: TextAlign.center,
+                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600,
+                          color: Colors.black87)),
+                ]),
+              ),
+            ),
+          ),
+        ),
+      ]),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
@@ -302,14 +538,18 @@ class _HomeScreenState extends State<HomeScreen> {
     final popular = allProducts.where((p) => p.isPopular).toList();
     final newArrivals = allProducts.where((p) => p.isNewArrival).toList();
     final bestSellers = allProducts.where((p) => p.isBestSeller).toList();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFFF3E0),
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft, end: Alignment.bottomRight,
-            colors: [Color(0xFFFFF8F0), Color(0xFFFFEDD8), Color(0xFFFFF3E0), Color(0xFFFFEDD8)],
+            colors: isDark
+                ? [AppTheme.darkBg, AppTheme.darkSurface, AppTheme.darkBg, AppTheme.darkSurface]
+                : const [Color(0xFFFFF8F0), Color(0xFFFFEDD8), Color(0xFFFFF3E0), Color(0xFFFFEDD8)],
           ),
         ),
         child: SafeArea(
@@ -317,7 +557,9 @@ class _HomeScreenState extends State<HomeScreen> {
             slivers: [
               SliverAppBar(
                 floating: true, snap: true,
-                backgroundColor: Colors.white.withOpacity(0.95),
+                backgroundColor: isDark
+                    ? AppTheme.darkSurface.withOpacity(0.95)
+                    : Colors.white.withOpacity(0.95),
                 elevation: 1, automaticallyImplyLeading: false, titleSpacing: 0,
                 title: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -327,22 +569,25 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: CircleAvatar(
                         radius: 18,
                         backgroundColor: AppTheme.primary.withOpacity(0.15),
-                        child: Text(
-                          auth.name.isNotEmpty ? auth.name[0].toUpperCase() : 'S',
-                          style: const TextStyle(color: AppTheme.primary,
-                              fontWeight: FontWeight.w700, fontSize: 16),
-                        ),
+                        child: context.watch<AuthProvider>().avatar.isNotEmpty
+                            ? Text(context.watch<AuthProvider>().avatar,
+                                style: const TextStyle(fontSize: 18))
+                            : Text(auth.name.isNotEmpty ? auth.name[0].toUpperCase() : 'S',
+                                style: const TextStyle(color: AppTheme.primary,
+                                    fontWeight: FontWeight.w700, fontSize: 16)),
                       ),
                     ),
                     const Spacer(),
                     IconButton(
-                      icon: const Icon(Icons.favorite_border_rounded, color: AppTheme.textDark),
+                      icon: Icon(Icons.favorite_border_rounded,
+                          color: isDark ? AppTheme.darkTextPrimary : AppTheme.textDark),
                       onPressed: () => Navigator.pushNamed(context, AppRoutes.wishlist),
                       padding: EdgeInsets.zero, constraints: const BoxConstraints()),
                     const SizedBox(width: 8),
                     Stack(children: [
                       IconButton(
-                        icon: const Icon(Icons.shopping_cart_outlined, color: AppTheme.textDark),
+                        icon: Icon(Icons.shopping_cart_outlined,
+                            color: isDark ? AppTheme.darkTextPrimary : AppTheme.textDark),
                         onPressed: () => Navigator.pushNamed(context, AppRoutes.cart),
                         padding: EdgeInsets.zero, constraints: const BoxConstraints()),
                       if (cart.itemCount > 0)
@@ -358,7 +603,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 bottom: PreferredSize(
                   preferredSize: const Size.fromHeight(100),
                   child: Container(
-                    color: Colors.white.withOpacity(0.95),
+                    color: isDark ? AppTheme.darkSurface.withOpacity(0.95) : Colors.white.withOpacity(0.95),
                     padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
                     child: Column(children: [
                       Row(children: [
@@ -368,15 +613,15 @@ class _HomeScreenState extends State<HomeScreen> {
                             child: Container(
                               height: 44,
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF5F5F5),
+                                color: isDark ? AppTheme.darkCard : const Color(0xFFF5F5F5),
                                 borderRadius: BorderRadius.circular(22),
-                                border: Border.all(color: Colors.grey.shade300)),
-                              child: const Row(children: [
-                                SizedBox(width: 12),
-                                Icon(Icons.search, color: Colors.grey, size: 20),
-                                SizedBox(width: 8),
+                                border: Border.all(color: isDark ? AppTheme.darkDivider : Colors.grey.shade300)),
+                              child: Row(children: [
+                                const SizedBox(width: 12),
+                                Icon(Icons.search, color: isDark ? AppTheme.darkTextSecondary : Colors.grey, size: 20),
+                                const SizedBox(width: 8),
                                 Expanded(child: Text('Search by Keyword or Product ID',
-                                    style: TextStyle(fontSize: 13, color: Colors.grey))),
+                                    style: TextStyle(fontSize: 13, color: isDark ? AppTheme.darkTextSecondary : Colors.grey))),
                               ]),
                             ),
                           ),
@@ -387,7 +632,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: Container(
                             width: 44, height: 44,
                             decoration: BoxDecoration(
-                              color: _isListening ? AppTheme.primary : AppTheme.primary.withOpacity(0.1),
+                              color: _isListening ? AppTheme.primary
+                                  : AppTheme.primary.withOpacity(0.1),
                               shape: BoxShape.circle),
                             child: Icon(
                               _isListening ? Icons.mic_rounded : Icons.mic_outlined,
@@ -401,7 +647,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             width: 44, height: 44,
                             decoration: BoxDecoration(
                                 color: Colors.blue.withOpacity(0.1), shape: BoxShape.circle),
-                            child: const Icon(Icons.camera_alt_rounded, color: Colors.blue, size: 22)),
+                            child: const Icon(Icons.camera_alt_rounded,
+                                color: Colors.blue, size: 22)),
                         ),
                       ]),
                       const SizedBox(height: 8),
@@ -410,12 +657,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Row(children: [
                           const Icon(Icons.location_on_outlined, size: 16, color: AppTheme.primary),
                           const SizedBox(width: 4),
-                          Expanded(
-                            child: Text(address.deliveryText,
-                                style: const TextStyle(fontSize: 13,
-                                    fontWeight: FontWeight.w500, color: AppTheme.textDark),
-                                overflow: TextOverflow.ellipsis),
-                          ),
+                          Expanded(child: Text(address.deliveryText,
+                              style: const TextStyle(fontSize: 13,
+                                  fontWeight: FontWeight.w500, color: AppTheme.textDark),
+                              overflow: TextOverflow.ellipsis)),
                           const Icon(Icons.my_location, size: 14, color: AppTheme.primary),
                         ]),
                       ),
@@ -426,8 +671,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
               SliverToBoxAdapter(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  // ── Category Row with colorful rings ──
                   Container(
-                    color: Colors.white.withOpacity(0.7),
+                    color: isDark ? AppTheme.darkSurface.withOpacity(0.7) : Colors.white.withOpacity(0.7),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     child: SizedBox(
                       height: 95,
@@ -437,6 +683,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         itemCount: _categories.length,
                         itemBuilder: (ctx, i) {
                           final cat = _categories[i];
+                          final ringGrad = _categoryRingGradients[i % _categoryRingGradients.length];
+                          final labelColor = ringGrad[0];
                           return GestureDetector(
                             onTap: () => _onCategoryTap(cat),
                             child: Container(
@@ -444,21 +692,33 @@ class _HomeScreenState extends State<HomeScreen> {
                               width: 68,
                               child: Column(mainAxisSize: MainAxisSize.min, children: [
                                 Container(
-                                  width: 60, height: 60,
+                                  width: 64, height: 64,
                                   decoration: BoxDecoration(
-                                    shape: BoxShape.circle, color: cat.bgColor,
-                                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08),
-                                        blurRadius: 4, offset: const Offset(0, 2))]),
-                                  child: ClipOval(child: Image.network(cat.imageUrl,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (_, __, ___) =>
-                                          Icon(cat.icon, color: Colors.grey.shade700, size: 26))),
+                                    shape: BoxShape.circle,
+                                    gradient: LinearGradient(
+                                      colors: ringGrad,
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ),
+                                  ),
+                                  padding: const EdgeInsets.all(3),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                        color: isDark ? AppTheme.darkCard : Colors.white,
+                                        shape: BoxShape.circle),
+                                    padding: const EdgeInsets.all(2),
+                                    child: ClipOval(child: Image.network(cat.imageUrl,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, __, ___) =>
+                                            Icon(cat.icon, color: ringGrad[0], size: 24))),
+                                  ),
                                 ),
                                 const SizedBox(height: 5),
                                 Text(cat.label, textAlign: TextAlign.center,
                                     maxLines: 2, overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(fontSize: 9,
-                                        color: AppTheme.textDark, height: 1.2)),
+                                    style: TextStyle(fontSize: 9,
+                                        color: labelColor, fontWeight: FontWeight.w700,
+                                        height: 1.2)),
                               ]),
                             ),
                           );
@@ -468,6 +728,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(height: 8),
 
+                  // ── Main Banner Carousel ──
                   SizedBox(
                     height: 160,
                     child: PageView.builder(
@@ -487,7 +748,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               Image.network(b.imageUrl, fit: BoxFit.cover,
                                   errorBuilder: (_, __, ___) => const SizedBox.shrink()),
                               Container(decoration: BoxDecoration(gradient: LinearGradient(
-                                  colors: [b.color1.withOpacity(0.82), b.color2.withOpacity(0.45)]))),
+                                  colors: [b.color1.withOpacity(0.82),
+                                      b.color2.withOpacity(0.45)]))),
                               Padding(
                                 padding: const EdgeInsets.all(20),
                                 child: Column(
@@ -495,8 +757,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                      decoration: BoxDecoration(color: Colors.white.withOpacity(0.25),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                          color: Colors.white.withOpacity(0.25),
                                           borderRadius: BorderRadius.circular(4)),
                                       child: const Text('UPTO 70% OFF',
                                           style: TextStyle(color: Colors.white,
@@ -516,7 +780,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       },
                     ),
                   ),
-
                   const SizedBox(height: 10),
                   Row(mainAxisAlignment: MainAxisAlignment.center,
                       children: List.generate(_banners.length, (i) => AnimatedContainer(
@@ -528,15 +791,104 @@ class _HomeScreenState extends State<HomeScreen> {
                           borderRadius: BorderRadius.circular(3))))),
                   const SizedBox(height: 16),
 
+                  // ── Featured Products ──
                   _sectionHeader('Featured Products', featured, context),
                   _horizontalProductList(featured),
+
+                  // ── PROMO BANNER 1: Women Fashion ──
+                  _promoBanner(
+                    title: 'WOMEN\nFASHION',
+                    subtitle: 'Kurtis, Sarees & More',
+                    tag: 'UPTO 60% OFF',
+                    bgColor: const Color(0xFFFCE4EC),
+                    textColor: const Color(0xFF880E4F),
+                    tagColor: const Color(0xFFE91E8C),
+                    imageUrl: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400',
+                    category: 'Women Fashion',
+                  ),
+
+                  // ── Popular Products ──
                   _sectionHeader('Popular Products', popular, context),
                   _horizontalProductList(popular),
+
+                  // ── CATEGORY STRIP BANNER: Footwear ──
+                  _categoryStripBanner(
+                    title: 'STEP IN STYLE',
+                    subtitle: 'Footwear for every occasion',
+                    bgColor: const Color(0xFFF3E5F5),
+                    items: [
+                      _StripItem('Heels', 'Footwear',
+                          'https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=200',
+                          Icons.roller_skating_rounded),
+                      _StripItem('Sneakers', 'Footwear',
+                          'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=200',
+                          Icons.roller_skating_rounded),
+                      _StripItem('Flats', 'Footwear',
+                          'https://images.unsplash.com/photo-1515347619252-60a4bf4fff4f?w=200',
+                          Icons.roller_skating_rounded),
+                      _StripItem('Formal', 'Footwear',
+                          'https://images.unsplash.com/photo-1614252235316-8c857d38b5f4?w=200',
+                          Icons.roller_skating_rounded),
+                      _StripItem('Kids', 'Footwear',
+                          'https://images.unsplash.com/photo-1514989940723-e8e51635b782?w=200',
+                          Icons.roller_skating_rounded),
+                    ],
+                  ),
+
+                  // ── New Arrivals ──
                   _sectionHeader('New Arrivals', newArrivals, context),
                   _horizontalProductList(newArrivals),
+
+                  // ── PROMO BANNER 2: Electronics ──
+                  _promoBanner(
+                    title: 'TECH\nDEALS',
+                    subtitle: 'Gadgets at lowest prices',
+                    tag: 'UP TO 62% OFF',
+                    bgColor: const Color(0xFFE3F2FD),
+                    textColor: const Color(0xFF0D47A1),
+                    tagColor: const Color(0xFF1565C0),
+                    imageUrl: 'https://images.unsplash.com/photo-1550009158-9ebf69173e03?w=400',
+                    category: 'Electronics',
+                  ),
+
+                  // ── Best Sellers ──
                   _sectionHeader('Best Sellers', bestSellers, context),
                   _horizontalProductList(bestSellers),
 
+                  // ── CATEGORY STRIP BANNER: Beauty ──
+                  _categoryStripBanner(
+                    title: 'BEAUTY EDIT',
+                    subtitle: 'Top picks for you',
+                    bgColor: const Color(0xFFFFF8E1),
+                    items: [
+                      _StripItem('Skincare', 'Skincare',
+                          'https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=200',
+                          Icons.spa_rounded),
+                      _StripItem('Makeup', 'Makeup',
+                          'https://images.unsplash.com/photo-1512496015851-a90fb38ba796?w=200',
+                          Icons.brush_rounded),
+                      _StripItem('Beauty', 'Beauty',
+                          'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=200',
+                          Icons.face_rounded),
+                      _StripItem('Jewellery', 'Jewellery',
+                          'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=200',
+                          Icons.diamond_rounded),
+                    ],
+                  ),
+
+                  // ── PROMO BANNER 3: Men Fashion ──
+                  _promoBanner(
+                    title: 'MEN\'S\nEDIT',
+                    subtitle: 'Shirts, Jeans & More',
+                    tag: 'NEW ARRIVALS',
+                    bgColor: const Color(0xFFE8F5E9),
+                    textColor: const Color(0xFF1B5E20),
+                    tagColor: const Color(0xFF2E7D32),
+                    imageUrl: 'https://images.unsplash.com/photo-1571945153237-4929e783af4a?w=400',
+                    category: 'Men Fashion',
+                  ),
+
+                  // ── All Products Grid ──
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: Text('All Products', style: TextStyle(fontSize: 16,
@@ -547,9 +899,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 2, crossAxisSpacing: 10,
-                        mainAxisSpacing: 10, childAspectRatio: 0.65),
+                        mainAxisSpacing: 10, childAspectRatio: 0.60),
                     itemCount: allProducts.length,
-                    itemBuilder: (ctx, i) => ProductCard(product: allProducts[i]),
+                    itemBuilder: (ctx, i) {
+                      final product = allProducts[i];
+                      // ── Insert promo banner every 6 products ──
+                      return ProductCard(product: product);
+                    },
                   ),
                   const SizedBox(height: 20),
                 ]),
@@ -561,18 +917,56 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  static const _sectionGradients = {
+    'Featured Products': [Color(0xFFE91E8C), Color(0xFFFF6B6B)],
+    'Popular Products': [Color(0xFF1565C0), Color(0xFF42A5F5)],
+    'New Arrivals': [Color(0xFF6A1B9A), Color(0xFFCE93D8)],
+    'Best Sellers': [Color(0xFF2E7D32), Color(0xFF81C784)],
+  };
+
+  static const _sectionSubtitles = {
+    'Featured Products': 'Hand-picked for you',
+    'Popular Products': 'Trending this week',
+    'New Arrivals': 'Just dropped',
+    'Best Sellers': 'Most loved picks',
+  };
+
   Widget _sectionHeader(String title, List<Product> products, BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-        Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700,
-            color: AppTheme.textDark)),
-        GestureDetector(
-          onTap: () => Navigator.pushNamed(context, AppRoutes.categoryProducts,
-              arguments: {'category': title, 'products': products}),
-          child: const Text('See all', style: TextStyle(fontSize: 13,
-              color: AppTheme.primary, fontWeight: FontWeight.w600))),
-      ]),
+    final gradColors = _sectionGradients[title] ??
+        [AppTheme.primary, AppTheme.primary];
+    final subtitle = _sectionSubtitles[title] ?? '';
+    return GestureDetector(
+      onTap: () => Navigator.pushNamed(context, AppRoutes.categoryProducts,
+          arguments: {'category': title, 'products': products}),
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(12, 16, 12, 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+              colors: gradColors,
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(title, style: const TextStyle(fontSize: 14,
+                fontWeight: FontWeight.w800, color: Colors.white)),
+            if (subtitle.isNotEmpty)
+              Text(subtitle, style: TextStyle(
+                  fontSize: 11, color: Colors.white.withOpacity(0.85))),
+          ]),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.25),
+                borderRadius: BorderRadius.circular(20)),
+            child: const Text('See all →',
+                style: TextStyle(fontSize: 11, color: Colors.white,
+                    fontWeight: FontWeight.w700)),
+          ),
+        ]),
+      ),
     );
   }
 
@@ -604,4 +998,10 @@ class _CategoryData {
   final IconData icon;
   final Color bgColor;
   _CategoryData(this.label, this.icon, this.bgColor, this.imageUrl);
+}
+
+class _StripItem {
+  final String label, category, imageUrl;
+  final IconData icon;
+  _StripItem(this.label, this.category, this.imageUrl, this.icon);
 }

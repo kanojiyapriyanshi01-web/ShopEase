@@ -14,6 +14,7 @@ class MainShell extends StatelessWidget {
   Widget build(BuildContext context) {
     final nav = context.watch<NavigationProvider>();
     final cart = context.watch<CartProvider>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final screens = [
       const HomeScreen(),
@@ -23,14 +24,11 @@ class MainShell extends StatelessWidget {
     ];
 
     return Scaffold(
-      body: IndexedStack(
-        index: nav.currentIndex,
-        children: screens,
-      ),
+      body: IndexedStack(index: nav.currentIndex, children: screens),
       bottomNavigationBar: NavigationBar(
         selectedIndex: nav.currentIndex,
         onDestinationSelected: nav.setIndex,
-        backgroundColor: Colors.white,
+        backgroundColor: isDark ? AppTheme.darkSurface : Colors.white,
         elevation: 8,
         indicatorColor: AppTheme.primary.withOpacity(0.12),
         destinations: [
