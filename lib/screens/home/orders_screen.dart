@@ -12,6 +12,8 @@ class OrdersScreen extends StatefulWidget {
 }
 
 class _OrdersScreenState extends State<OrdersScreen> {
+  static const String _baseUrl = 'https://shopease-backend-be8v.onrender.com';
+
   List<dynamic> _orders = [];
   bool _loading = true;
   String? _error;
@@ -28,7 +30,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
     final token = auth.token;
     try {
       final response = await http.get(
-        Uri.parse("http://192.168.1.30:8080/orders/me"),
+        Uri.parse("$_baseUrl/orders/me"),
         headers: {"Authorization": "Bearer $token"},
       );
       if (response.statusCode == 200) {
@@ -62,7 +64,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
     if (confirm != true) return;
     try {
       final response = await http.put(
-        Uri.parse("http://192.168.1.30:8080/orders/$orderId/cancel"),
+        Uri.parse("$_baseUrl/orders/$orderId/cancel"),
         headers: {"Authorization": "Bearer $token"},
       );
       if (response.statusCode == 200) {
@@ -104,15 +106,16 @@ class _OrdersScreenState extends State<OrdersScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text("My Orders"),
-        backgroundColor: Colors.white,
+        title: Text("My Orders", style: TextStyle(color: theme.appBarTheme.titleTextStyle?.color)),
+        backgroundColor: theme.appBarTheme.backgroundColor,
         elevation: 0.5,
-        actions: [
-          IconButton(icon: const Icon(Icons.refresh), onPressed: _fetchOrders),
-        ],
+        actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: _fetchOrders)],
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator(color: AppTheme.primary))
@@ -127,10 +130,12 @@ class _OrdersScreenState extends State<OrdersScreen> {
                       child: const Text("Retry")),
                 ]))
               : _orders.isEmpty
-                  ? const Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                      Icon(Icons.shopping_bag_outlined, size: 70, color: Colors.grey),
-                      SizedBox(height: 12),
-                      Text("No orders yet", style: TextStyle(fontSize: 16, color: AppTheme.textGrey)),
+                  ? Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                      Icon(Icons.shopping_bag_outlined, size: 70,
+                          color: isDark ? AppTheme.darkTextSecondary : Colors.grey),
+                      const SizedBox(height: 12),
+                      Text("No orders yet", style: TextStyle(fontSize: 16,
+                          color: isDark ? AppTheme.darkTextSecondary : AppTheme.textGrey)),
                     ]))
                   : RefreshIndicator(
                       onRefresh: _fetchOrders,
@@ -148,9 +153,10 @@ class _OrdersScreenState extends State<OrdersScreen> {
                           return Container(
                             margin: const EdgeInsets.only(bottom: 12),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: theme.cardColor,
                               borderRadius: BorderRadius.circular(12),
-                              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 6)],
+                              boxShadow: [BoxShadow(
+                                  color: Colors.black.withOpacity(isDark ? 0.3 : 0.05), blurRadius: 6)],
                             ),
                             child: Column(children: [
                               Container(
@@ -164,20 +170,23 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                   const SizedBox(width: 10),
                                   Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                                     Text("Order #${order["id"].toString().substring(0, 8)}...",
-                                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14,
+                                            color: theme.textTheme.bodyMedium?.color)),
                                     Text(order["created_at"].toString().substring(0, 10),
-                                        style: const TextStyle(fontSize: 12, color: AppTheme.textGrey)),
+                                        style: TextStyle(fontSize: 12,
+                                            color: isDark ? AppTheme.darkTextSecondary : AppTheme.textGrey)),
                                   ])),
                                   Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                                    // ✅ FIX: ? → ₹
-                                    Text("₹${order["total"]}",
-                                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: AppTheme.primary)),
+                                    Text("\u20b9${order["total"]}",
+                                        style: const TextStyle(fontWeight: FontWeight.w800,
+                                            fontSize: 16, color: AppTheme.primary)),
                                     const SizedBox(height: 4),
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                                       decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(20)),
                                       child: Text(status.toUpperCase(),
-                                          style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
+                                          style: const TextStyle(color: Colors.white,
+                                              fontSize: 11, fontWeight: FontWeight.w700)),
                                     ),
                                   ]),
                                 ]),
@@ -198,16 +207,17 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                 Padding(
                                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                                   child: Column(children: [
-                                    const Divider(height: 1),
+                                    Divider(height: 1, color: isDark ? AppTheme.darkDivider : null),
                                     const SizedBox(height: 8),
                                     ...items.map((item) => Padding(
                                       padding: const EdgeInsets.only(bottom: 4),
                                       child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                                         Text("Product: ${item["product_id"]}",
-                                            style: const TextStyle(fontSize: 12, color: AppTheme.textGrey)),
-                                        // ✅ FIX: ? → ₹
-                                        Text("Qty: ${item["qty"]} x ₹${item["price"]}",
-                                            style: const TextStyle(fontSize: 12, color: AppTheme.textGrey)),
+                                            style: TextStyle(fontSize: 12,
+                                                color: isDark ? AppTheme.darkTextSecondary : AppTheme.textGrey)),
+                                        Text("Qty: ${item["qty"]} x \u20b9${item["price"]}",
+                                            style: TextStyle(fontSize: 12,
+                                                color: isDark ? AppTheme.darkTextSecondary : AppTheme.textGrey)),
                                       ]),
                                     )),
                                   ]),
@@ -215,8 +225,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                               if (canCancel)
                                 Padding(
                                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                                  child: SizedBox(
-                                    width: double.infinity,
+                                  child: SizedBox(width: double.infinity,
                                     child: OutlinedButton.icon(
                                       onPressed: () => _cancelOrder(order["id"]),
                                       icon: const Icon(Icons.cancel_outlined, color: Colors.red, size: 18),
@@ -241,11 +250,11 @@ class _OrdersScreenState extends State<OrdersScreen> {
       decoration: BoxDecoration(color: active ? color : Colors.grey.shade300, shape: BoxShape.circle),
       child: Icon(active ? Icons.check : Icons.circle, color: Colors.white, size: 14)),
     const SizedBox(height: 4),
-    Text(label, style: TextStyle(fontSize: 9, color: active ? color : Colors.grey, fontWeight: FontWeight.w600)),
+    Text(label, style: TextStyle(fontSize: 9,
+        color: active ? color : Colors.grey, fontWeight: FontWeight.w600)),
   ]);
 
   Widget _progressLine(bool active, Color color) => Expanded(child: Container(
-    height: 2, color: active ? color : Colors.grey.shade300, margin: const EdgeInsets.only(bottom: 20)));
+    height: 2, color: active ? color : Colors.grey.shade300,
+    margin: const EdgeInsets.only(bottom: 20)));
 }
-
-

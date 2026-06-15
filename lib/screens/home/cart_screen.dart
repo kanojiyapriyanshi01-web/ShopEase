@@ -178,7 +178,7 @@ class CheckoutSheet extends StatefulWidget {
 }
 
 class _CheckoutSheetState extends State<CheckoutSheet> {
-  static const String _baseUrl = 'http://192.168.1.30:8080';
+  static const String _baseUrl = 'https://shopease-backend-be8v.onrender.com';
 
   final _nameCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
