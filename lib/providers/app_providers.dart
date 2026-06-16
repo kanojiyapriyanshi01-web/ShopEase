@@ -153,10 +153,32 @@ class CartProvider extends ChangeNotifier {
 
   bool isInCart(String productId) => _items.any((i) => i.product.id == productId);
 
+  // ── FIX: Get current quantity of a product in cart ──
+  int getQty(String productId) {
+    final idx = _items.indexWhere((i) => i.product.id == productId);
+    return idx >= 0 ? _items[idx].quantity : 0;
+  }
+
+  // ── Original addToCart: adds 1 each time (used by ProductCard) ──
   void addToCart(Product product) {
     final idx = _items.indexWhere((i) => i.product.id == product.id);
     if (idx >= 0) { _items[idx].quantity++; }
     else { _items.add(CartItem(product: product)); }
+    _saveCart();
+    notifyListeners();
+  }
+
+  // ── FIX: New method — add with specific quantity from product detail ──
+  // If product already in cart, SET quantity (replaces). Else add fresh.
+  void addToCartWithQty(Product product, int qty) {
+    if (qty <= 0) return;
+    final idx = _items.indexWhere((i) => i.product.id == product.id);
+    if (idx >= 0) {
+      // Product already in cart → update to the selected quantity
+      _items[idx].quantity = qty;
+    } else {
+      _items.add(CartItem(product: product, quantity: qty));
+    }
     _saveCart();
     notifyListeners();
   }
@@ -167,6 +189,8 @@ class CartProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ── FIX: updateQty already handles cart page quantity changes correctly ──
+  // qty <= 0 removes item, qty > 0 updates it → cart total auto-updates
   void updateQty(String productId, int qty) {
     final idx = _items.indexWhere((i) => i.product.id == productId);
     if (idx >= 0) {

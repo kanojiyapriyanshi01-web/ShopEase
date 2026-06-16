@@ -49,6 +49,7 @@ class ProductCard extends StatelessWidget {
           () => Navigator.pushNamed(context, AppRoutes.productDetail, arguments: product),
       child: Container(
         width: width,
+        // ── FIX: Use fixed height to prevent overflow ──
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: gradColors,
@@ -63,103 +64,124 @@ class ProductCard extends StatelessWidget {
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Image
-              Stack(children: [
-                ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                  child: ProductImage(
+          // ── FIX: ClipRect prevents children from painting outside bounds ──
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Image
+                Stack(children: [
+                  ProductImage(
                     imageUrl: product.imageUrl,
                     height: 120,
                     width: double.infinity,
                     fit: BoxFit.cover,
                   ),
-                ),
-                Positioned(
-                  top: 6, right: 6,
-                  child: GestureDetector(
-                    onTap: () => wishlist.toggleWishlist(product),
-                    child: Container(
-                      padding: const EdgeInsets.all(5),
-                      decoration: const BoxDecoration(
-                          color: Colors.white, shape: BoxShape.circle,
-                          boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)]),
-                      child: Icon(
-                        isWishlisted ? Icons.favorite : Icons.favorite_border,
-                        color: isWishlisted ? Colors.red : Colors.grey, size: 18),
+                  Positioned(
+                    top: 6, right: 6,
+                    child: GestureDetector(
+                      onTap: () => wishlist.toggleWishlist(product),
+                      child: Container(
+                        padding: const EdgeInsets.all(5),
+                        decoration: const BoxDecoration(
+                            color: Colors.white, shape: BoxShape.circle,
+                            boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)]),
+                        child: Icon(
+                          isWishlisted ? Icons.favorite : Icons.favorite_border,
+                          color: isWishlisted ? Colors.red : Colors.grey, size: 18),
+                      ),
                     ),
                   ),
-                ),
-                Positioned(
-                  top: 6, left: 6,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(colors: [gradColors[0], gradColors[1]]),
-                      borderRadius: BorderRadius.circular(4)),
-                    child: Text('${product.discount.toInt()}% off',
-                        style: const TextStyle(color: Colors.white,
-                            fontSize: 10, fontWeight: FontWeight.w700)),
-                  ),
-                ),
-              ]),
-
-              // Info
-              Padding(
-                padding: const EdgeInsets.all(6),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(product.name, maxLines: 2, overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600,
-                          color: AppTheme.textDark)),
-                  const SizedBox(height: 4),
-                  Row(children: [
-                    Text('₹${product.price.toInt()}',
-                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700,
-                            color: AppTheme.primary)),
-                    const SizedBox(width: 6),
-                    Text('₹${product.originalPrice.toInt()}',
-                        style: const TextStyle(fontSize: 11, color: AppTheme.textGrey,
-                            decoration: TextDecoration.lineThrough)),
-                  ]),
-                  const SizedBox(height: 3),
-                  Row(children: [
-                    const Icon(Icons.star, size: 12, color: Colors.amber),
-                    const SizedBox(width: 2),
-                    Text('${product.rating} (${product.reviewCount})',
-                        style: const TextStyle(fontSize: 10, color: AppTheme.textGrey)),
-                  ]),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    width: double.infinity,
-                    child: DecoratedBox(
+                  Positioned(
+                    top: 6, left: 6,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                       decoration: BoxDecoration(
-                        gradient: inCart
-                            ? const LinearGradient(colors: [Colors.green, Color(0xFF66BB6A)])
-                            : LinearGradient(colors: [gradColors[0], gradColors[1]]),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: ElevatedButton(
-                        onPressed: () => cart.addToCart(product),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.transparent,
-                          shadowColor: Colors.transparent,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 7),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8)),
-                          elevation: 0,
-                        ),
-                        child: Text(inCart ? '✓ Added' : 'Add to Cart',
-                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                      ),
+                        gradient: LinearGradient(colors: [gradColors[0], gradColors[1]]),
+                        borderRadius: BorderRadius.circular(4)),
+                      child: Text('${product.discount.toInt()}% off',
+                          style: const TextStyle(color: Colors.white,
+                              fontSize: 10, fontWeight: FontWeight.w700)),
                     ),
                   ),
                 ]),
-              ),
-            ],
+
+                // Info
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(6, 6, 6, 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                    Text(product.name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            fontSize: 13, fontWeight: FontWeight.w600,
+                            color: AppTheme.textDark)),
+                    const SizedBox(height: 4),
+                    // ── FIX: Wrap price row to prevent overflow on small screens ──
+                    Row(children: [
+                      Flexible(
+                        child: Text('₹${product.price.toInt()}',
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700,
+                                color: AppTheme.primary)),
+                      ),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text('₹${product.originalPrice.toInt()}',
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 11, color: AppTheme.textGrey,
+                                decoration: TextDecoration.lineThrough)),
+                      ),
+                    ]),
+                    const SizedBox(height: 3),
+                    Row(children: [
+                      const Icon(Icons.star, size: 12, color: Colors.amber),
+                      const SizedBox(width: 2),
+                      Flexible(
+                        child: Text('${product.rating} (${product.reviewCount})',
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 10, color: AppTheme.textGrey)),
+                      ),
+                    ]),
+                    const SizedBox(height: 8),
+                    // ── FIX: Button uses intrinsic width, no overflow ──
+                    SizedBox(
+                      width: double.infinity,
+                      // ── FIX: Constrain button height explicitly ──
+                      height: 34,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: inCart
+                              ? const LinearGradient(colors: [Colors.green, Color(0xFF66BB6A)])
+                              : LinearGradient(colors: [gradColors[0], gradColors[1]]),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: ElevatedButton(
+                          onPressed: () => cart.addToCart(product),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.transparent,
+                            shadowColor: Colors.transparent,
+                            foregroundColor: Colors.white,
+                            // ── FIX: Zero vertical padding, height controlled by SizedBox ──
+                            padding: EdgeInsets.zero,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8)),
+                            elevation: 0,
+                          ),
+                          child: Text(inCart ? '✓ Added' : 'Add to Cart',
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                        ),
+                      ),
+                    ),
+                  ]),
+                ),
+              ],
+            ),
           ),
         ),
       ),

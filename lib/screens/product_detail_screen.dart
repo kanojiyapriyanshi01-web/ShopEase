@@ -16,7 +16,6 @@ class ProductDetailScreen extends StatefulWidget {
 }
 
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
-  int _qty = 1;
   int _imgIndex = 0;
   final PageController _imgCtrl = PageController();
 
@@ -26,10 +25,16 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final product = ModalRoute.of(context)!.settings.arguments as Product;
+
+    // ── CORE FIX: Read qty DIRECTLY from CartProvider — single source of truth ──
+    // cart.watch() matlab koi bhi change (product detail ya cart screen dono se)
+    // automatically yahan reflect hoga
     final cart = context.watch<CartProvider>();
     final wishlist = context.watch<WishlistProvider>();
+
     final isWishlisted = wishlist.isWishlisted(product.id);
-    final inCart = cart.isInCart(product.id);
+    final qty = cart.getQty(product.id); // 0 if not in cart
+
     final related = SampleData.products
         .where((p) => p.category == product.category && p.id != product.id)
         .take(6).toList();
@@ -125,7 +130,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             color: cardColor,
             padding: const EdgeInsets.all(16),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(product.name, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: textColor)),
+              Text(product.name,
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: textColor)),
               const SizedBox(height: 8),
               Row(children: [
                 Text('₹${product.price.toInt()}',
@@ -134,7 +140,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 Text('₹${product.originalPrice.toInt()}',
                     style: TextStyle(fontSize: 16, color: subColor, decoration: TextDecoration.lineThrough)),
                 const SizedBox(width: 8),
-                Container(padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
                         color: Colors.green.withOpacity(isDark ? 0.2 : 0.08),
                         borderRadius: BorderRadius.circular(4)),
@@ -143,7 +150,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               ]),
               const SizedBox(height: 8),
               Row(children: [
-                Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(color: Colors.green, borderRadius: BorderRadius.circular(4)),
                     child: Row(children: [
                       Text('${product.rating}',
@@ -152,39 +160,72 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       const Icon(Icons.star, color: Colors.white, size: 12),
                     ])),
                 const SizedBox(width: 8),
-                Text('${product.reviewCount} reviews', style: TextStyle(color: subColor, fontSize: 13)),
+                Text('${product.reviewCount} reviews',
+                    style: TextStyle(color: subColor, fontSize: 13)),
               ]),
               Divider(height: 24, color: isDark ? AppTheme.darkDivider : null),
-              Text('Description', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: textColor)),
+              Text('Description',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: textColor)),
               const SizedBox(height: 6),
-              Text(product.description, style: TextStyle(color: subColor, fontSize: 14, height: 1.5)),
+              Text(product.description,
+                  style: TextStyle(color: subColor, fontSize: 14, height: 1.5)),
               Divider(height: 24, color: isDark ? AppTheme.darkDivider : null),
+
+              // ── QUANTITY SELECTOR — synced with CartProvider ──
               Row(children: [
-                Text('Quantity:', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: textColor)),
+                Text('Quantity:',
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: textColor)),
                 const SizedBox(width: 16),
                 Container(
-                  decoration: BoxDecoration(
-                      border: Border.all(color: divColor),
-                      borderRadius: BorderRadius.circular(8)),
-                  child: Row(children: [
-                    IconButton(icon: Icon(Icons.remove, size: 18, color: textColor),
-                        onPressed: () { if (_qty > 1) setState(() => _qty--); }),
-                    Text('$_qty', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: textColor)),
-                    IconButton(icon: Icon(Icons.add, size: 18, color: textColor),
-                        onPressed: () => setState(() => _qty++)),
-                  ])),
+                    decoration: BoxDecoration(
+                        border: Border.all(color: divColor),
+                        borderRadius: BorderRadius.circular(8)),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      // ── MINUS: qty=1 → remove from cart, qty=0 → disabled ──
+                      IconButton(
+                        icon: Icon(Icons.remove, size: 18,
+                            color: qty > 0 ? textColor : Colors.grey.shade400),
+                        onPressed: qty > 0
+                            ? () {
+                                if (qty == 1) {
+                                  // Remove from cart completely
+                                  cart.removeFromCart(product.id);
+                                } else {
+                                  cart.updateQty(product.id, qty - 1);
+                                }
+                              }
+                            : null,
+                      ),
+                      Text('$qty',
+                          style: TextStyle(
+                              fontWeight: FontWeight.w700, fontSize: 16, color: textColor)),
+                      // ── PLUS: qty=0 → addToCart (qty becomes 1), qty>0 → increment ──
+                      IconButton(
+                        icon: Icon(Icons.add, size: 18, color: textColor),
+                        onPressed: () {
+                          if (qty == 0) {
+                            // First time add — qty 0→1
+                            cart.addToCart(product);
+                          } else {
+                            cart.updateQty(product.id, qty + 1);
+                          }
+                        },
+                      ),
+                    ])),
               ]),
+
               const SizedBox(height: 20),
               Row(children: [
                 Expanded(child: OutlinedButton.icon(
                   onPressed: () {
-                    cart.addToCart(product);
+                    if (qty == 0) cart.addToCart(product);
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                         content: Text('${product.name} added to cart'),
-                        duration: const Duration(seconds: 1), backgroundColor: Colors.green));
+                        duration: const Duration(seconds: 1),
+                        backgroundColor: Colors.green));
                   },
                   icon: const Icon(Icons.shopping_cart_outlined, size: 18),
-                  label: Text(inCart ? 'In Cart' : 'Add to Cart'),
+                  label: Text(qty > 0 ? 'In Cart ($qty)' : 'Add to Cart'),
                   style: OutlinedButton.styleFrom(
                       foregroundColor: AppTheme.primary,
                       side: const BorderSide(color: AppTheme.primary),
@@ -194,17 +235,21 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 const SizedBox(width: 12),
                 Expanded(child: ElevatedButton(
                   onPressed: () {
-                    cart.addToCart(product);
-                    showModalBottomSheet(context: context, isScrollControlled: true,
+                    if (qty == 0) cart.addToCart(product);
+                    showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
                         backgroundColor: Colors.transparent,
                         builder: (_) => CheckoutSheet(cart: cart));
                   },
                   style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primary, foregroundColor: Colors.white,
+                      backgroundColor: AppTheme.primary,
+                      foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       elevation: 0),
-                  child: const Text('Buy Now', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                  child: const Text('Buy Now',
+                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
                 )),
               ]),
             ]),
@@ -212,19 +257,21 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
           // ── You may also like ──
           if (related.isNotEmpty) ...[
-            Container(width: double.infinity,
+            Container(
+                width: double.infinity,
                 color: isDark ? AppTheme.darkSurface : const Color(0xFFF5F5F5),
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                 child: Text('You may also like',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: textColor))),
-            SizedBox(height: 280,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                itemCount: related.length,
-                itemBuilder: (ctx, i) => Padding(
-                    padding: const EdgeInsets.only(right: 10, bottom: 4),
-                    child: SizedBox(width: 155, child: ProductCard(product: related[i]))))),
+            SizedBox(
+                height: 280,
+                child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    itemCount: related.length,
+                    itemBuilder: (ctx, i) => Padding(
+                        padding: const EdgeInsets.only(right: 10, bottom: 4),
+                        child: SizedBox(width: 155, child: ProductCard(product: related[i]))))),
             const SizedBox(height: 16),
           ],
         ]),
