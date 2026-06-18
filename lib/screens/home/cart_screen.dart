@@ -1,7 +1,6 @@
 import '../../widgets/product_image.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:geolocator/geolocator.dart';
@@ -266,38 +265,8 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
   }
 
   Future<void> _payWithStripe() async {
-    final auth = context.read<AuthProvider>();
-    final token = auth.token;
-    setState(() { _processing = true; _error = null; });
-    try {
-      final orderRes = await http.post(Uri.parse('$_baseUrl/orders'),
-          headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $token'},
-          body: jsonEncode({'items': widget.cart.items.map((i) => {
-            'product_id': i.product.id, 'qty': i.quantity, 'price': i.product.price}).toList()}));
-      if (orderRes.statusCode != 201) {
-        setState(() { _error = 'Failed to create order.'; _processing = false; }); return;
-      }
-      final orderId = jsonDecode(orderRes.body)['id'].toString();
-      final amount = (widget.cart.total * 100).toInt();
-      final intentRes = await http.post(Uri.parse('$_baseUrl/payments/create-intent'),
-          headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $token'},
-          body: jsonEncode({'amount': amount, 'order_id': orderId}));
-      if (intentRes.statusCode != 200) {
-        setState(() { _error = 'Payment setup failed.'; _processing = false; }); return;
-      }
-      final clientSecret = jsonDecode(intentRes.body)['client_secret'] as String;
-      await Stripe.instance.initPaymentSheet(paymentSheetParameters: SetupPaymentSheetParameters(
-          paymentIntentClientSecret: clientSecret, merchantDisplayName: 'ShopEase',
-          style: ThemeMode.system));
-      setState(() => _processing = false);
-      await Stripe.instance.presentPaymentSheet();
-      if (!mounted) return;
-      _onOrderSuccess(orderId);
-    } on StripeException catch (e) {
-      if (mounted) setState(() { _processing = false; _error = e.error.localizedMessage ?? 'Payment cancelled'; });
-    } catch (e) {
-      if (mounted) setState(() { _processing = false; _error = e.toString(); });
-    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Card payment coming soon!')));
   }
 
   Future<void> _placeOrder() async {

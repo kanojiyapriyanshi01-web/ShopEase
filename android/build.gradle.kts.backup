@@ -14,9 +14,6 @@ allprojects {
     }
 }
 subprojects {
-    configurations.all {
-        exclude(group = "com.stripe", module = "stripe-android-issuing-push-provisioning")
-    }
     afterEvaluate {
         if (project.hasProperty("android")) {
             extensions.findByType<com.android.build.gradle.BaseExtension>()?.apply {
@@ -40,3 +37,5 @@ subprojects {
 tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
 }
+
+

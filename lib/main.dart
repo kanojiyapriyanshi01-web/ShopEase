@@ -1,6 +1,5 @@
 // lib/main.dart
 import 'screens/home/profile_screen.dart';
-import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/app_providers.dart';
@@ -19,8 +18,6 @@ import 'screens/home/wishlist_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  Stripe.publishableKey = 'pk_test_51Th4pcAs3vwmTxsxeGY6XXrZ3ceUcgqGwDoN5UX4cGQuLHbjVWXdDwAB8q92Fq87ZtWAvWxoMn4luEDVw2TQwWmG00UoMPzZre';
-  await Stripe.instance.applySettings();
   runApp(const ShopEaseApp());
 }
 
