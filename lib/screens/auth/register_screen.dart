@@ -1,4 +1,4 @@
-import "package:flutter/material.dart";
+﻿import "package:flutter/material.dart";
 import "package:provider/provider.dart";
 import "../../providers/app_providers.dart";
 import "../../routes/app_routes.dart";
@@ -21,7 +21,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       setState(() => _error = "Please enter your name");
       return;
     }
-    if (_phoneCtrl.text.trim().length != 10) {
+    if (_phoneCtrl.text.trim().length != 10 || !RegExp(r"^\d+$").hasMatch(_phoneCtrl.text.trim())) {
       setState(() => _error = "Enter valid 10-digit phone number");
       return;
     }
