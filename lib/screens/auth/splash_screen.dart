@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_providers.dart';
 import '../../routes/app_routes.dart';
@@ -35,7 +35,7 @@ class _SplashScreenState extends State<SplashScreen>
     if (auth.isLoggedIn) {
       Navigator.pushReplacementNamed(context, AppRoutes.main);
     } else {
-      Navigator.pushReplacementNamed(context, AppRoutes.register);
+      Navigator.pushReplacementNamed(context, AppRoutes.login);
     }
   }
 
@@ -104,3 +104,4 @@ class _SplashScreenState extends State<SplashScreen>
     );
   }
 }
+
