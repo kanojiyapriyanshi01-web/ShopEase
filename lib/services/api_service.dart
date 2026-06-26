@@ -3,7 +3,8 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://192.168.1.30:8080';
+  // ✅ ONE production URL -- local IP hata diya
+  static const String baseUrl = 'https://shopease-backend-be8v.onrender.com';
 
   static Future<Map<String, dynamic>> sendOtp(String phone) async {
     final res = await http.post(
@@ -49,9 +50,3 @@ class ApiService {
     await prefs.setString('token', token);
   }
 }
-
-
-
-
-
-
