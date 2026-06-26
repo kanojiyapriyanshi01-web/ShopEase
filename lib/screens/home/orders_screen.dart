@@ -1,4 +1,4 @@
-import "dart:convert";
+﻿import "dart:convert";
 import "package:flutter/material.dart";
 import "package:http/http.dart" as http;
 import "package:provider/provider.dart";
@@ -48,13 +48,13 @@ class _OrdersScreenState extends State<OrdersScreen> {
     final token = auth.token;
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogCtx) => AlertDialog(
         title: const Text("Cancel Order"),
         content: const Text("Are you sure you want to cancel this order?"),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("No")),
+          TextButton(onPressed: () => Navigator.pop(dialogCtx, false), child: const Text("No")),
           ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () => Navigator.pop(dialogCtx, true),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             child: const Text("Yes, Cancel"),
           ),
@@ -258,3 +258,4 @@ class _OrdersScreenState extends State<OrdersScreen> {
     height: 2, color: active ? color : Colors.grey.shade300,
     margin: const EdgeInsets.only(bottom: 20)));
 }
+
