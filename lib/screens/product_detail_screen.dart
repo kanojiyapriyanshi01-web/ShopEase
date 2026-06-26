@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../models/product_model.dart';
@@ -26,20 +26,17 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   Widget build(BuildContext context) {
     final product = ModalRoute.of(context)!.settings.arguments as Product;
 
-    // ── CORE FIX: Read qty DIRECTLY from CartProvider — single source of truth ──
-    // cart.watch() matlab koi bhi change (product detail ya cart screen dono se)
-    // automatically yahan reflect hoga
     final cart = context.watch<CartProvider>();
     final wishlist = context.watch<WishlistProvider>();
 
     final isWishlisted = wishlist.isWishlisted(product.id);
-    final qty = cart.getQty(product.id); // 0 if not in cart
+    final qty = cart.getQty(product.id);
 
     final related = SampleData.products
         .where((p) => p.category == product.category && p.id != product.id)
         .take(6).toList();
-    final images = [product.imageUrl, product.imageUrl, product.imageUrl];
 
+    // ✅ F-12: Single image — carousel hata diya (same image 3x tha)
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final cardColor = theme.cardColor;
@@ -102,21 +99,18 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       ),
       body: SingleChildScrollView(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          // ── Image Carousel ──
+          // ✅ F-12: Single image — no fake carousel
           Stack(alignment: Alignment.bottomCenter, children: [
-            SizedBox(height: 320,
-              child: PageView.builder(controller: _imgCtrl, itemCount: images.length,
-                onPageChanged: (i) => setState(() => _imgIndex = i),
-                itemBuilder: (ctx, i) => ProductImage(
-                    imageUrl: images[i], width: double.infinity, height: 320, fit: BoxFit.cover))),
-            Positioned(bottom: 10,
-              child: Row(children: List.generate(images.length, (i) => AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                margin: const EdgeInsets.symmetric(horizontal: 3),
-                width: i == _imgIndex ? 20 : 6, height: 6,
-                decoration: BoxDecoration(
-                    color: i == _imgIndex ? AppTheme.primary : Colors.white.withOpacity(0.7),
-                    borderRadius: BorderRadius.circular(3)))))),
+            SizedBox(
+              height: 320,
+              width: double.infinity,
+              child: ProductImage(
+                imageUrl: product.imageUrl,
+                width: double.infinity,
+                height: 320,
+                fit: BoxFit.cover,
+              ),
+            ),
             Positioned(top: 12, left: 12,
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -171,7 +165,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   style: TextStyle(color: subColor, fontSize: 14, height: 1.5)),
               Divider(height: 24, color: isDark ? AppTheme.darkDivider : null),
 
-              // ── QUANTITY SELECTOR — synced with CartProvider ──
+              // ── Quantity Selector ──
               Row(children: [
                 Text('Quantity:',
                     style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: textColor)),
@@ -181,14 +175,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         border: Border.all(color: divColor),
                         borderRadius: BorderRadius.circular(8)),
                     child: Row(mainAxisSize: MainAxisSize.min, children: [
-                      // ── MINUS: qty=1 → remove from cart, qty=0 → disabled ──
                       IconButton(
                         icon: Icon(Icons.remove, size: 18,
                             color: qty > 0 ? textColor : Colors.grey.shade400),
                         onPressed: qty > 0
                             ? () {
                                 if (qty == 1) {
-                                  // Remove from cart completely
                                   cart.removeFromCart(product.id);
                                 } else {
                                   cart.updateQty(product.id, qty - 1);
@@ -199,12 +191,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       Text('$qty',
                           style: TextStyle(
                               fontWeight: FontWeight.w700, fontSize: 16, color: textColor)),
-                      // ── PLUS: qty=0 → addToCart (qty becomes 1), qty>0 → increment ──
                       IconButton(
                         icon: Icon(Icons.add, size: 18, color: textColor),
                         onPressed: () {
                           if (qty == 0) {
-                            // First time add — qty 0→1
                             cart.addToCart(product);
                           } else {
                             cart.updateQty(product.id, qty + 1);
@@ -218,11 +208,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               Row(children: [
                 Expanded(child: OutlinedButton.icon(
                   onPressed: () {
-                    if (qty == 0) cart.addToCart(product);
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text('${product.name} added to cart'),
-                        duration: const Duration(seconds: 1),
-                        backgroundColor: Colors.green));
+                    // ✅ F-11: SnackBar sirf tab show karo jab actually add ho
+                    if (qty == 0) {
+                      cart.addToCart(product);
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text('${product.name} added to cart'),
+                          duration: const Duration(seconds: 1),
+                          backgroundColor: Colors.green));
+                    }
                   },
                   icon: const Icon(Icons.shopping_cart_outlined, size: 18),
                   label: Text(qty > 0 ? 'In Cart ($qty)' : 'Add to Cart'),
