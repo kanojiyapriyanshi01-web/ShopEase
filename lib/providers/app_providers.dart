@@ -13,7 +13,6 @@ class AuthProvider extends ChangeNotifier {
   bool _isLoading = true;
 
   String get name => _name;
-  // ✅ F-03: email getter hata diya -- phone ko email nahi dikhana
   String get phone => _phone;
   String get token => _token;
   String get avatar => _avatar;
@@ -46,7 +45,6 @@ class AuthProvider extends ChangeNotifier {
 
   Future<String?> loginWithOtp(String phone, {String otp = ""}) async {
     try {
-      // ✅ F-02: actual otp pass karo -- "" nahi
       final res = await ApiService.login(phone, otp);
       if (res.containsKey("error")) return res["error"];
       final prefs = await SharedPreferences.getInstance();
@@ -137,18 +135,8 @@ class CartProvider extends ChangeNotifier {
     if (cartJson != null) {
       final List decoded = jsonDecode(cartJson);
       for (var item in decoded) {
-        // ✅ F-04: null return karo agar product nahi mila -- wrong product mat load karo
-        final Product? product = SampleData.products.firstWhere(
-          (p) => p.id == item["id"],
-          orElse: () => SampleData.products.firstWhere(
-            (p) => false,
-            orElse: () => SampleData.products.first,
-          ),
-        );
-        // ignore: unnecessary_null_comparison
-        if (product == null) continue; // skip missing products
         final idx = SampleData.products.indexWhere((p) => p.id == item["id"]);
-        if (idx < 0) continue; // ✅ Product not found -- skip silently
+        if (idx < 0) continue;
         final qty = item["qty"] as int;
         _items.add(CartItem(product: SampleData.products[idx], quantity: qty));
       }
@@ -225,7 +213,6 @@ class WishlistProvider extends ChangeNotifier {
     if (wishJson != null) {
       final List decoded = jsonDecode(wishJson);
       for (var id in decoded) {
-        // ✅ F-04: Product not found toh skip karo -- first product mat dikhao
         final idx = SampleData.products.indexWhere((p) => p.id == id);
         if (idx < 0) continue;
         _items.add(SampleData.products[idx]);
@@ -284,26 +271,33 @@ class ThemeProvider extends ChangeNotifier {
   }
 }
 
+// ✅ F-05 + F-06: OrderProvider ab backend se sync karta hai
+// Local in-memory list + fake timestamp ID hata diya
+// Server UUID use hota hai, OrdersScreen backend se fetch karti hai
 class OrderModel {
-  final String id;
-  final List<CartItem> items;
+  final String id;      // ✅ Server UUID
   final double total;
   final String date;
-  OrderModel({required this.id, required this.items, required this.total, required this.date});
+  final String status;
+  OrderModel({
+    required this.id,
+    required this.total,
+    required this.date,
+    this.status = "pending",
+  });
 }
 
 class OrderProvider extends ChangeNotifier {
   final List<OrderModel> _orders = [];
   List<OrderModel> get orders => _orders;
 
-  void placeOrder(List<CartItem> items, double total) {
-    final now = DateTime.now();
-    _orders.insert(0, OrderModel(
-      id: now.millisecondsSinceEpoch.toString().substring(7),
-      items: List.from(items),
-      total: total,
-      date: "${now.day}/${now.month}/${now.year} ${now.hour}:${now.minute.toString().padLeft(2, "0")}",
-    ));
+  // ✅ Server response se real ID lo -- timestamp substring nahi
+  void addOrderFromServer({
+    required String id,
+    required double total,
+    required String date,
+  }) {
+    _orders.insert(0, OrderModel(id: id, total: total, date: date));
     notifyListeners();
   }
 }
