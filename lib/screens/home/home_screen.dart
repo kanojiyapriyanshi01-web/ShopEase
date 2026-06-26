@@ -146,7 +146,7 @@ class _HomeScreenState extends State<HomeScreen> {
         context.read<AddressProvider>().updateAddress(
           name: context.read<AuthProvider>().name,
           phone: context.read<AuthProvider>().phone,
-          address: place.street ?? '',
+          address: (place.street != null && place.street!.trim().isNotEmpty) ? place.street! : ', '.trim(),
           city: city,
           pincode: pincode,
         );
