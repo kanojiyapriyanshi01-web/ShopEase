@@ -13,7 +13,7 @@ class AuthProvider extends ChangeNotifier {
   bool _isLoading = true;
 
   String get name => _name;
-  String get email => _phone;
+  // ✅ F-03: email getter hata diya -- phone ko email nahi dikhana
   String get phone => _phone;
   String get token => _token;
   String get avatar => _avatar;
@@ -46,7 +46,8 @@ class AuthProvider extends ChangeNotifier {
 
   Future<String?> loginWithOtp(String phone, {String otp = ""}) async {
     try {
-      final res = await ApiService.login(phone, "");
+      // ✅ F-02: actual otp pass karo -- "" nahi
+      final res = await ApiService.login(phone, otp);
       if (res.containsKey("error")) return res["error"];
       final prefs = await SharedPreferences.getInstance();
       _token = res["token"] ?? "";
@@ -136,10 +137,20 @@ class CartProvider extends ChangeNotifier {
     if (cartJson != null) {
       final List decoded = jsonDecode(cartJson);
       for (var item in decoded) {
-        final product = SampleData.products.firstWhere(
-          (p) => p.id == item["id"], orElse: () => SampleData.products.first);
+        // ✅ F-04: null return karo agar product nahi mila -- wrong product mat load karo
+        final Product? product = SampleData.products.firstWhere(
+          (p) => p.id == item["id"],
+          orElse: () => SampleData.products.firstWhere(
+            (p) => false,
+            orElse: () => SampleData.products.first,
+          ),
+        );
+        // ignore: unnecessary_null_comparison
+        if (product == null) continue; // skip missing products
+        final idx = SampleData.products.indexWhere((p) => p.id == item["id"]);
+        if (idx < 0) continue; // ✅ Product not found -- skip silently
         final qty = item["qty"] as int;
-        _items.add(CartItem(product: product, quantity: qty));
+        _items.add(CartItem(product: SampleData.products[idx], quantity: qty));
       }
       notifyListeners();
     }
@@ -153,13 +164,11 @@ class CartProvider extends ChangeNotifier {
 
   bool isInCart(String productId) => _items.any((i) => i.product.id == productId);
 
-  // ── FIX: Get current quantity of a product in cart ──
   int getQty(String productId) {
     final idx = _items.indexWhere((i) => i.product.id == productId);
     return idx >= 0 ? _items[idx].quantity : 0;
   }
 
-  // ── Original addToCart: adds 1 each time (used by ProductCard) ──
   void addToCart(Product product) {
     final idx = _items.indexWhere((i) => i.product.id == product.id);
     if (idx >= 0) { _items[idx].quantity++; }
@@ -168,13 +177,10 @@ class CartProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ── FIX: New method — add with specific quantity from product detail ──
-  // If product already in cart, SET quantity (replaces). Else add fresh.
   void addToCartWithQty(Product product, int qty) {
     if (qty <= 0) return;
     final idx = _items.indexWhere((i) => i.product.id == product.id);
     if (idx >= 0) {
-      // Product already in cart → update to the selected quantity
       _items[idx].quantity = qty;
     } else {
       _items.add(CartItem(product: product, quantity: qty));
@@ -189,8 +195,6 @@ class CartProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ── FIX: updateQty already handles cart page quantity changes correctly ──
-  // qty <= 0 removes item, qty > 0 updates it → cart total auto-updates
   void updateQty(String productId, int qty) {
     final idx = _items.indexWhere((i) => i.product.id == productId);
     if (idx >= 0) {
@@ -221,9 +225,10 @@ class WishlistProvider extends ChangeNotifier {
     if (wishJson != null) {
       final List decoded = jsonDecode(wishJson);
       for (var id in decoded) {
-        final product = SampleData.products.firstWhere(
-          (p) => p.id == id, orElse: () => SampleData.products.first);
-        _items.add(product);
+        // ✅ F-04: Product not found toh skip karo -- first product mat dikhao
+        final idx = SampleData.products.indexWhere((p) => p.id == id);
+        if (idx < 0) continue;
+        _items.add(SampleData.products[idx]);
       }
       notifyListeners();
     }
